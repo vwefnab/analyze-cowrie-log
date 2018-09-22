@@ -6,7 +6,9 @@ from pathlib import Path
 folder_path = os.path.dirname(os.path.abspath(__file__))
 
 #This is path to .json files. If path not included as a argument it will use "folder_path"
-#json_files_path = Path('')
+#json_files_path = Path('C:\\')
+
+
 
 
 def get_files_json(path=folder_path):
