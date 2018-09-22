@@ -29,8 +29,9 @@ def fuse_all_json():
     all_json = []
 
     json_list = get_files_json(folder_path)
-    #Put cowrie.json last in order
+
     if len(json_list) > 1:
+        # Put cowrie.json last in order
         json_list.append(json_list.pop(json_list.index('cowrie.json')))
 
 
