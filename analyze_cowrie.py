@@ -6,7 +6,7 @@ from pathlib import Path
 folder_path = os.path.dirname(os.path.abspath(__file__))
 
 #This is path to .json files. If path not included as a argument it will use "folder_path"
-json_files_path = Path('D:\\Dropbox\\programmering\\Shared Projects\\Analyze-Cowrie-Log\\')
+#json_files_path = Path('')
 
 
 def get_files_json(path=folder_path):
@@ -26,7 +26,7 @@ def get_files_json(path=folder_path):
 def fuse_all_json():
     all_json = []
 
-    json_list = get_files_json(json_files_path.__str__())
+    json_list = get_files_json(folder_path.__str__())
     #Put cowrie.json last in order
     if len(json_list) > 1:
         json_list.append(json_list.pop(json_list.index('cowrie.json')))
@@ -34,7 +34,7 @@ def fuse_all_json():
     for f in json_list:
 
         try:
-            file_path = json_files_path.__str__() +'\\'+ f
+            file_path = folder_path.__str__() +'\\'+ f
             file_list = [line.rstrip('\n') for line in open(file_path)]
             for i in file_list:
                 all_json.append(json.loads(i))
