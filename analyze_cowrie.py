@@ -38,7 +38,7 @@ def fuse_all_json():
     for f in json_list:
 
         try:
-            file_path = folder_path +'\\'+ f
+            file_path = f
             file_list = [line.rstrip('\n') for line in open(file_path)]
             for i in file_list:
                 all_json.append(json.loads(i))
