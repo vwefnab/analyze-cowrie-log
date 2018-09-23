@@ -21,6 +21,8 @@ class session:
 
     def get_id(self):
         return self.id
+    def get_ip(self):
+        return self.ipaddress
 
     def get_protocol(self):
         return self.protocol
@@ -43,6 +45,9 @@ class session:
     def get_files(self):
         return self.file_download
 
+    def get_commands(self):
+        return self.commands
+
     def set_session(self, bool=True):
         self.session_success = bool
 
@@ -54,6 +59,10 @@ class session:
 
     def add_file_obj(self, file):
         self.file_download.append(file)
+
+    def add_command(self, cmd):
+        self.commands.append(cmd)
+
 
     def info_to_string(self):
         print('protocol: ' + self.protocol)

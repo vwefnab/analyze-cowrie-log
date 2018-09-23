@@ -2,6 +2,7 @@ import os
 import json
 from cow_file import cow_file
 from cow_client import cow_client
+from cow_command import cow_command
 from session import session
 
 from pathlib import Path
@@ -77,10 +78,25 @@ def index_of_active_session(ses, active_sessions):
 
     return index
 
+def index_of_client(client, client_list):
+    index = 0
+    for c in client_list:
+        if client in c.get_ip():
+            break
+        index += 1
+
+    return index
+
+def ip_in_clientlist(ip, client_list):
+    bool = False
+    for c in client_list:
+        if ip in c.get_ip():
+            bool = True
+    return bool
+
 
 def json_to_objects(json_data):
-    #ip_addresses_list = list()
-    #cow_client_list = list()
+    cow_client_list = list()
     active_sessions = list()
     closed_sessions = list()
 
@@ -111,7 +127,7 @@ def json_to_objects(json_data):
                 #remove closed session from active session list
                 del active_sessions[index]
 
-                print('session ' + json_line['session'] + ': ' + str(index))
+                #print('session ' + json_line['session'] + ': ' + str(index))
 
         #Between start and end of sessions
         else:
@@ -125,13 +141,38 @@ def json_to_objects(json_data):
                     file_obj = cow_file(shasum_in=json_line['shasum'], url_in=json_line['url'], path_dest_in=json_line['outfile'])
                     active_sessions[index].add_file_obj(file_obj)
 
+                #if log_line is a command
+                elif json_line['eventid'] == 'cowrie.command.input' and 'CMD' in json_line['message'][0:4]:
+                    #add command to
+                    new_cmd = cow_command(json_line['message'][5:], json_line['timestamp'])
+                    active_sessions[index].add_command(new_cmd)
+
+
+    #add all closed sessions to object cow_client
+    ip_addresses_list = list()
+
+
+    for ses in closed_sessions:
+        ip = ses.get_ip()
+        #Check if it is a new client that not exists in any obejcts already
+        if not ip in ip_addresses_list:
+            ip_addresses_list.append(ip)
+            #Creat cow_client
+            new_client = cow_client(ipaddress_in=ip)
+            new_client.add_new_session(ses)
+            cow_client_list.append(new_client)
+
+        else:
+            if ip_in_clientlist(ip, cow_client_list):
+                index = index_of_client(ip, cow_client_list)
+                # Add new session to existing cow_client
+                cow_client_list[index].add_new_session(ses)
 
 
 
-    for c in closed_sessions:
-        files = c.get_files()
-        for f in files:
-            f.info_to_string()
+
+    return cow_client_list
+
 
 
 
@@ -140,4 +181,9 @@ def json_to_objects(json_data):
 
 data = fuse_all_json()
 
-json_to_objects(data)
+clients = json_to_objects(data)
+
+for c in clients:
+    print('Client: ' + c.get_ip() + '\tNumber of sessions: ' + str(c.get_session_count()))
+
+
