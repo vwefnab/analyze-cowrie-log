@@ -184,6 +184,16 @@ data = fuse_all_json()
 clients = json_to_objects(data)
 
 for c in clients:
-    print('Client: ' + c.get_ip() + '\tNumber of sessions: ' + str(c.get_session_count()))
+    print('\nClient: ' + c.get_ip() + '\tNumber of sessions: ' + str(c.get_session_count()))
+    sessions = c.get_sessions()
+    for s in sessions:
+        print('\tSession: ' + s.get_id() + '\tDuration: ' + str(s.get_time_duration()) + ' seconds\n')
 
+        commands = s.get_commands()
+        if len(commands) > 0:
+            print('\t\tCommands:')
+            for cmd in commands:
+                print('\t\t' + cmd.get_time() + '\t' + cmd.get_cmd())
+        else:
+            print('No commands')
 
