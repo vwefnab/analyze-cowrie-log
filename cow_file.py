@@ -18,4 +18,7 @@ class cow_file:
     def get_path_dest(self):
         return self.path_dest
 
-
+    def info_to_string(self):
+        print('URL: ' + self.url)
+        print('Path_dest: ' + self.path_dest)
+        print('SHAsum: ' + self.shasum)
