@@ -1,4 +1,5 @@
 import os
+import platform
 import json
 from analyze_cowrie_lib import cow_file, cow_command, session, cow_client
 import sys
@@ -59,7 +60,8 @@ def get_options(args=sys.argv):
             if arg in '-a':
 
                 try:
-                    option_list[2].append(sys.argv[2])
+                    index = args.index('-a') + 1
+                    option_list[2].append(sys.argv[index])
                     option_list[2][0] = 1
                 except:
                     print('Specify path to .clog file')
@@ -68,13 +70,17 @@ def get_options(args=sys.argv):
             elif arg in '-c':
                 index = args.index('-c')+1
                 try:
-                        option_list[1][0] = 1
-                        json_path = sys.argv[index]
-                        if os.path.isdir(json_path):
-                            option_list[1].append(json_path)
-                            option_list[1].append(sys.argv[index+1])
-                        else:
-                            raise
+                    option_list[1][0] = 1
+                    json_path = sys.argv[index]
+                    if '.json' not in json_path:
+                        option_list[1].append(json_path)
+                        option_list[1].append(sys.argv[index+1])
+
+                    else:
+                        new_path = os.path.dirname(json_path)
+                        option_list[1].append(new_path)
+                        option_list[1].append(sys.argv[index + 1])
+
                 except:
                     print('Not enough arguments or path don\'t exists. Specify path to .json files and output path.')
                     exit(1)
@@ -99,45 +105,85 @@ def get_options(args=sys.argv):
 
     return option_list
 
+def get_system_path(path):
+
+
+    system = platform.system()
+    print('system: ' + system + ' ' + path)
+    if 'Windows' in system:
+        #A bug in PowerShell. Remove " at the end.
+        if '\"' in path[-1]:
+            path = path[0:len(path)-1]
+        full_path = path + '\\'
+    else:
+        full_path = path + '/'
+
+
+    return full_path
+
+
 
 
 
 def get_files_json(path=folder_path):
 
+    #Add / or \ if it is a directory
+    if '.json' not in path:
+        print('PATH' + path)
+        full_path = get_system_path(path)
+
+    else:
+
+        dir_name = os.path.dirname(path)
+        full_path = get_system_path(dir_name)
+
+
     arr = []
     try:
-        arr_first = os.listdir(path)
+        arr_first = os.listdir(full_path)
         for f in arr_first:
             if '.json' in f:
-                arr.append(f)
+                arr.append(full_path+f)
     except:
         print('Could not get files in the main folder')
 
+    if len(arr) > 1:
+        # Put cowrie.json last in order
+        arr.append(arr.pop(arr.index(full_path+'cowrie.json')))
+
     return arr
 
+
+
 def get_clients_file_names(path=folder_path):
+
     arr = []
 
+
     try:
+        if '.clog' not in path:
 
-
-        if os.path.isdir(path):
-
-            arr_first = os.listdir(path)
+            full_path = get_system_path(path)
+            print(full_path)
+            arr_first = os.listdir(full_path)
             for f in arr_first:
 
                 if re.search(r'(\d).clog',f):
-                    arr.append(f)
+                    arr.append(full_path+f)
         else:
-            file_name = os.path.basename(path)
+
             path_dir = os.path.dirname(path)
+            full_path = get_system_path(path_dir)
+            file_name = os.path.basename(path)
+
+
             if len(file_name) != 0:
                 file_name = file_name[0:file_name.index('.clog') - 1]
             arr_first = os.listdir(path_dir)
             for f in arr_first:
 
                 if re.search(file_name + r'(\d).clog', f):
-                    arr.append(f)
+                    arr.append(full_path+f)
 
     except:
         print('Could not get .clog files')
@@ -231,9 +277,7 @@ def json_to_objects3(path_in, path_out):
     file_cache.write('')
     file_cache.close()
 
-    if len(json_file_list) > 1:
-        # Put cowrie.json last in order
-        json_file_list.append(json_file_list.pop(json_file_list.index('cowrie.json')))
+
 
     for f in json_file_list:
 
@@ -667,6 +711,7 @@ def compare_clients(path_in, path_out='', threshold=80, nr_common_pass=20):
                 if bool_all_passwords:
                     passwords = get_passwords_from_client(client)
                     for p in passwords:
+
                         all_passwords.append(p)
 
 
