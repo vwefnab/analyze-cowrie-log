@@ -31,11 +31,41 @@ def help_page():
     
     Aalyzing (.clog files): 
     -a      All analysing methods on .clog files.
-        [-a PATH_IN]
+        [-a]
+        
+    -m      Main info about all clients.
+        [-m]
+    
+    -P      Most common passwords.
+        [-P | -P NUMBER]
+    
+    -U      Most common user names.
+        [-U | -U NUMBER]
+    
+    -u      Unique set of commands. (Default threshold is set to 80%)
+        [-u]
+    
+    -h      Human like set of commands (Non robot)
+        [-h]
+    
+    -d      SHASUM of all downloaded files.
+        [-d]
+    
+    -f      Input .clog file.
+        [-f PATH_IN]
     
     -o      Output to file.
         [-o PATH_OUT]
      
+    Filters
+    --filer-ip              Filter by specific IP-address
+        [--filter-ip=IPADDRESS]
+    
+    --filter-nr-sessions    Filter by minimum numbers of sessions
+        [--filter-nr-sessions=NUMBER]
+    
+    --filter-nr-downloads   Filter by minimum numbers of downloads
+        [--filter-nr-downloads=NUMBER] 
         
         
     """)
@@ -43,9 +73,10 @@ def help_page():
 
 def get_options(args=sys.argv):
 
-    ##bool list of arguments status: 0: Output to file 1: convert 2: analyze all 3: output file 4: -
+    ##bool list of arguments status: 0: Output to file 1: convert 2: analyze all 3: main client info
+    #4: common passwords 5: common usernames 6: uniq commands 7: Human sessions 8: Downloaded files 9: input file 10: filter-ip 11: filter-sessions 12: filter-downloads
     #Make all options False
-    option_list = [[0],[0],[0],[0]]
+    option_list = [[0],[0],[0],[0],[0],[0],[0],[0],[0],[0],[0,''],[0,0],[0,0]]
     #If any arguments except first file path been found
     if len(args) > 1:
 
@@ -57,32 +88,120 @@ def get_options(args=sys.argv):
                 exit()
             #If all analyzing is going to be True
 
-            if arg in '-a':
 
-                try:
-                    index = args.index('-a') + 1
-                    option_list[2].append(sys.argv[index])
-                    option_list[2][0] = 1
-                except:
-                    print('Specify path to .clog file')
 
             #convert mode
             elif arg in '-c':
                 index = args.index('-c')+1
                 try:
                     option_list[1][0] = 1
-                    json_path = sys.argv[index]
+                    json_path = args[index]
                     if '.json' not in json_path:
                         option_list[1].append(json_path)
-                        option_list[1].append(sys.argv[index+1])
+                        option_list[1].append(args[index+1])
 
                     else:
                         new_path = os.path.dirname(json_path)
                         option_list[1].append(new_path)
-                        option_list[1].append(sys.argv[index + 1])
+                        option_list[1].append(args[index + 1])
 
                 except:
                     print('Not enough arguments or path don\'t exists. Specify path to .json files and output path.')
+                    exit(1)
+
+            # If all analyzing is going to be True
+            elif arg in '-a':
+                count = 3
+                while count < 10:
+                    option_list[count][0] = 1
+                    count+=1
+            #If main client info is going to be true
+            elif arg in '-m':
+                option_list[3][0] = 1
+            # If password option is going to be true
+            elif arg in '-P':
+                option_list[4][0] = 1
+                try:
+                    index = args.index('-P') + 1
+                    if len(args)-1 >= index and ('-' not in args[index][0]):
+                        option_list[4].append(int(args[index]))
+                    else:
+                        option_list[4].append(25)
+                except:
+                    print('Could not read argument for option -P.')
+                    exit(1)
+            # If usernames option is going to be true
+            elif arg in '-U':
+                option_list[5][0] = 1
+                try:
+                    index = args.index('-U') + 1
+                    if len(args) - 1 >= index and ('-' not in args[index][0]):
+                        option_list[5].append(int(args[index]))
+                    else:
+                        option_list[5].append(25)
+                except:
+                    print('Could not read argument for option -U.')
+                    exit(1)
+            # If uniq commands is going to be true
+            elif arg in '-u':
+                option_list[6][0] = 1
+            # If human session is going to be true
+            elif arg in '-h':
+                option_list[7][0] = 1
+            # If download option is going to be true
+            elif arg in '-d':
+                option_list[8][0] = 1
+            # If input file option is going to be true
+            elif arg in '-f':
+                option_list[9][0] = 1
+                try:
+                    index = args.index('-f') + 1
+                    if len(args) - 1 >= index and ('-' not in args[index][0]):
+                        option_list[9].append(args[index])
+                    else:
+                        raise
+                except:
+                    print('Could not read argument for option -f.')
+                    exit(1)
+            #Filter ip is set
+            elif '--filter-ip=' in arg:
+                option_list[10][0] = 1
+
+                try:
+                    arg_value = arg[12:]
+                    if len(arg_value) != 0:
+                        option_list[10][1] == arg_value
+                    else:
+                        raise
+
+                except:
+                    print('Could not read argument for option --filter-ip.')
+                    exit(1)
+            #FIlter nr of sessions is set
+            elif '--filter-nr-sessions=' in arg:
+                option_list[11][0] = 1
+                try:
+                    arg_value = arg[21:]
+                    if len(arg_value) != 0:
+                        option_list[11][1] = int(arg_value)
+                    else:
+                        raise
+
+                except:
+                    print('Could not read argument for option --filter-session.')
+                    exit(1)
+            #FIlter nr of downloads is set
+            elif '--filter-nr-downloads=' in arg:
+                option_list[12][0] = 1
+                try:
+                    arg_value = arg[22:]
+                    if len(arg_value) != 0:
+                        option_list[12][1] = int(arg_value)
+                    else:
+                        raise
+
+                except:
+                    print('Could not read argument for option --filter-downloads.')
                     exit(1)
 
             #Set ooutput to file to True
@@ -109,7 +228,6 @@ def get_system_path(path):
 
 
     system = platform.system()
-    print('system: ' + system + ' ' + path)
     if 'Windows' in system:
         #A bug in PowerShell. Remove " at the end.
         if '\"' in path[-1]:
@@ -129,7 +247,6 @@ def get_files_json(path=folder_path):
 
     #Add / or \ if it is a directory
     if '.json' not in path:
-        print('PATH' + path)
         full_path = get_system_path(path)
 
     else:
@@ -164,7 +281,6 @@ def get_clients_file_names(path=folder_path):
         if '.clog' not in path:
 
             full_path = get_system_path(path)
-            print(full_path)
             arr_first = os.listdir(full_path)
             for f in arr_first:
 
@@ -217,13 +333,17 @@ def get_all_commands(folder=folder_path):
 
 
 
-def get_downloaded_files(json_data):
+def get_downloaded_files(client):
     sha = set()
-    for a in json_data:
-        if a['eventid'] == 'cowrie.session.file_download' and 'http' in a['url']:
-            sha.add(a['shasum'])
-    for s in sha:
-        print(s)
+    ses = client.get_sessions()
+
+    for s in ses:
+        files = s.get_files()
+        if len(files) > 0:
+            for file in files:
+                sha.add(file.get_sha())
+    return sha
+
 
 
 def id_in_active_sessions(ses, active_sessions):
@@ -599,44 +719,41 @@ def import_from_analyze_logs(file):
 
 
 
-def get_all_client_info(nr_sessions=0, ipaddress='', nr_downloads=0):
-    client_files_list = get_clients_file_names()
+def get_main_client_info(client, nr_sessions=0, ipaddress='', nr_downloads=0):
+    list_print = list()
+    ip = client.get_ip()
+    sessions = client.get_sessions()
+    nr_ses = len(sessions)
+    nr_download = 0
+    passwords = list()
+    uniq_files = list()
+    nr_uniq_files = 0
 
 
-    for ls_file in client_files_list:
-        with open(ls_file) as file:
-            for f in file:
-                client = make_client_from_text(f)
-                ip = client.get_ip()
-                sessions = client.get_sessions()
-                nr_ses = len(sessions)
-                nr_download = 0
-                passwords = list()
-                uniq_files = list()
-                nr_uniq_files = 0
+    for ses in sessions:
+        if ses != None:
+            #Get passwords
+            if not ses.get_password() in passwords:
+                passwords.append(ses.get_password())
+            files = ses.get_files()
+            if nr_download != None:
+                nr_download += len(files)
+            for down in files:
+                sha = down.get_sha()
+                if not sha in uniq_files:
+                    uniq_files.append(sha)
+            if nr_uniq_files != None:
+                nr_uniq_files = len(uniq_files)
+
+    if nr_ses >= nr_sessions and ipaddress in ip and nr_download >= nr_downloads:
+        list_print.append(ip)
+        list_print.append('SESSIONS: '+ str(nr_ses))
+        list_print.append('DOWNLOADS: '+str(nr_download))
+        list_print.append('UNIQ_FILES: '+ str(nr_uniq_files))
+        list_print.append('UNIQ_PASSWD: '+ str(len(passwords)))
+    return list_print
 
 
-                for ses in sessions:
-                    if ses != None:
-                        #Get passwords
-                        if not ses.get_password() in passwords:
-                            passwords.append(ses.get_password())
-                        files = ses.get_files()
-                        if nr_download != None:
-                            nr_download += len(files)
-                        for down in files:
-                            sha = down.get_sha()
-                            if not sha in uniq_files:
-                                uniq_files.append(sha)
-                        if nr_uniq_files != None:
-                            nr_uniq_files = len(uniq_files)
-
-                if nr_ses >= nr_sessions and ipaddress in ip and nr_download >= nr_downloads:
-                    print(ip, '\t\tSESSIONS:', nr_ses, '\t\tDOWNLOADS:', nr_download, '\t\tUNIQ_FILES:', nr_uniq_files, '\t\tUNIQ_PASSWD:', len(passwords))
-
-
-def get_password():
-    print()
 
 
 def print_info_test(clients):
@@ -687,60 +804,114 @@ def get_passwords_from_client(client):
         passwords.append(passwd)
     return passwords
 
+def get_usernames_from_client(client):
+    sessions = client.get_sessions()
+    usernames = list()
+    for ses in sessions:
+        user = ses.get_username()
+        usernames.append(user)
+    return usernames
+
+##bool list of arguments status: 0: Output to file 1: convert 2: analyze all 3: main client info
+#4: common passwords 5: common usernames 6: uniq commands 7: Human sessions 8: Downloaded files 9: input file 10: filter-ip 11: filter-sessions 12: filter-downloads
 #See how many uniq set och commands a client have executed.
-def compare_clients(path_in, path_out='', threshold=80, nr_common_pass=20):
+def compare_clients(path_in, path_out='',bool_main_info=0, bool_passwords=0, bool_usernames=0, bool_uniq_cmds=0,
+                    bool_check_if_robot=0,bool_downloaded_files=0, bool_filter_ip=0, filter_ip='', bool_filter_ses=0, filter_ses=0,
+                    bool_filter_downloads=0,filter_downloads=0, thr_uniq_cmd=80,nr_common_pass=25, nr_common_users=25):
 
     client_files_list = get_clients_file_names(path_in)
     new_command_list = list()
     all_passwords = list()
-    bool_check_if_robot = False
+    all_usernames = list()
     if_robot_out = ''
-    bool_all_uniq_cmds = False
-    bool_all_passwords = True
+    all_downloads = set()
+    all_main_info = list()
+
+    #check if any filter is beeing used
+
+    filter_sum = bool_filter_ip + bool_filter_ses + bool_filter_downloads
+
+    if filter_sum > 0:
+        bool_filter = True
+    else:
+        bool_filter = False
+
 
     for client_file in client_files_list:
 
         with open(client_file) as file:
 
             for line in file:
-
-
                 client = make_client_from_text(line)
+                client_sum = 0
+                #Filter clients
+                if bool_filter:
 
-                #Get most common passwords
-                if bool_all_passwords:
-                    passwords = get_passwords_from_client(client)
-                    for p in passwords:
-
-                        all_passwords.append(p)
-
-
-                #Get commands from sessions that dont act as robot
-                if bool_check_if_robot:
-                    if not check_if_robot(client):
-                        if_robot_out += '\n---------NOT A ROBOT---------\n'
-                        if_robot_out += 'Client: ' + client.get_ip() + '\n-----------------------------\n'
+                    if bool_filter_ip and client_sum == 0:
+                        if client.get_ip() not in filter_ip:
+                            client_sum += 1
+                    if bool_filter_ses and client_sum == 0:
+                        if len(client.get_sessions()) < filter_ses:
+                            client_sum += 1
+                    if bool_filter_downloads and client_sum == 0:
                         sessions = client.get_sessions()
-                        for ses in sessions:
-                            commandos = ses.get_commands()
-                            if len(commandos) > 1:
-                                for com in commandos:
-                                    if_robot_out += com.get_time() + ' ' + com.get_cmd() + '\n'
+                        downloads_sum = 0
+                        for s in sessions:
+                            downloads_sum += len(s.get_files())
+                        if downloads_sum < filter_downloads:
+                            client_sum += 1
+
+                if client_sum == 0:
+
+                    # Get main info
+                    if bool_main_info:
+                        all_main_info.append(get_main_client_info(client))
+
+                    # Get most common passwords
+                    if bool_passwords:
+                        passwords = get_passwords_from_client(client)
+                        for p in passwords:
+                            all_passwords.append(p)
+
+                    # Get most common usernames
+                    if bool_passwords:
+                        usernames = get_usernames_from_client(client)
+                        for u in usernames:
+                            all_usernames.append(u)
+
+                    # Get commands from sessions that dont act as robot
+                    if bool_check_if_robot:
+                        if not check_if_robot(client):
+                            if_robot_out += '\n---------NOT A ROBOT---------\n'
+                            if_robot_out += 'Client: ' + client.get_ip() + '\n-----------------------------\n'
+                            sessions = client.get_sessions()
+                            for ses in sessions:
+                                commandos = ses.get_commands()
+                                if len(commandos) > 1:
+                                    for com in commandos:
+                                        if_robot_out += com.get_time() + ' ' + com.get_cmd() + '\n'
+
+                    # Get all uniq commands
+                    if bool_uniq_cmds:
+                        command_list = get_all_commands(client)
+                        if len(command_list) != 0:
+                            for clist in compare_commands(command_list, threshold=thr_uniq_cmd):
+                                new_command_list.append(clist)
+
+                    # Get downloaded files<<
+                    if bool_downloaded_files:
+                        client_downloads = get_downloaded_files(client)
+                        for sha in client_downloads:
+                            all_downloads.add(sha)
 
 
 
-                #Get all uniq commands
-                if bool_all_uniq_cmds:
-                    command_list = get_all_commands(client)
-                    if len(command_list) != 0:
-                        for clist in compare_commands(command_list, threshold=threshold):
-                            new_command_list.append(clist)
-
-        #Run all the individual uniq commands agains the others
-        if bool_all_uniq_cmds:
-            new_command_list = compare_commands(new_command_list, threshold=threshold)
-            #Delete #ENTER# from all command sets
-            new_command_list2 = delete_enter_str(new_command_list)
+        #Run all the individual uniq commands against the others
+    if bool_uniq_cmds:
+        if len(new_command_list) > 1:
+            new_command_list = compare_commands(new_command_list, threshold=thr_uniq_cmd)
+        #Delete #ENTER# from all command sets
+        new_command_list2 = delete_enter_str(new_command_list)
 
 
     #Print output-----------
@@ -750,28 +921,56 @@ def compare_clients(path_in, path_out='', threshold=80, nr_common_pass=20):
     if len(path_out) > 0:
         sys.stdout = open(path_out, 'w')
 
+    if bool_main_info:
+        all_main_info.sort(key=sort_key_session, reverse=True)
+        for client_info in all_main_info:
+            info_string = ''
+            for info in client_info:
+                info_string += info + '\t\t'
+            print(info_string)
+
+
     if bool_check_if_robot:
         print('\n\n\n\n\n\n\n\n--------------\nCHECK IF ROBOT\n--------------\n\n')
         print(if_robot_out)
 
-    if bool_all_uniq_cmds:
-        print('\n\n\n\n\n\n\n\n-----------------------------\nGET ALL UNIQE SET OF COMMANDS\n-----------------------------\n\n')
+    if bool_uniq_cmds:
+        print('\n\n\n\n\n\n\n\n-----------------------------\nGET ALL UNIQUE SET OF COMMANDS\n-----------------------------\n\n')
         count = 0
         for cmd_list in new_command_list2:
             count+=1
-            print('UNIQE: ' + str(count) + '\n')
+            print('UNIQUE: ' + str(count) + '\n')
             for cmd in cmd_list:
                 print(cmd)
             print('\n--------------------------------\n')
 
-    # Get alla passwords
-    if bool_all_passwords:
+    # Get all passwords
+    if bool_passwords:
         print('\n\n\n\n\n\n\n\n-------------------------\nGET MOST COMMON PASSWORDS\n-------------------------\n\n')
         pass_count = Counter(all_passwords)
         for pas in pass_count.most_common(nr_common_pass):
             print(pas)
 
+    # Get all usernames
+    if bool_passwords:
+        print('\n\n\n\n\n\n\n\n-------------------------\nGET MOST COMMON USERNAMES\n-------------------------\n\n')
+        user_count = Counter(all_usernames)
+        for user in user_count.most_common(nr_common_users):
+            print(user)
 
+    # Get all usernames
+    if bool_downloaded_files:
+        print('\n\n\n\n\n\n\n\n-------------------------\nGET ALL DOWNLOADED FILES\n-------------------------\n\n')
+        for sha in all_downloads:
+            print(sha)
+
+
+
+
+def sort_key_session(element):
+    text_session = element[1]
+    size = int(text_session[10:])
+    return size
 
 def delete_enter_str(new_command_list):
     new_command_list2 = list()
@@ -856,6 +1055,8 @@ def equal_strings(list1, list2):
 
 def start():
    options = get_options()
+
+
    #if output file is specifyed
    if options[0][0]:
        path_output = options[0][1]
@@ -870,14 +1071,27 @@ def start():
            json_to_objects3(path_input, path_output)
        except:
            print('Failed to convert json files to .clog files.')
-    #If analyze is active
-   elif options[2][0] == 1:
-       path_input = options[2][1]
-       compare_clients(path_in=path_input, path_out=path_output)
+    #If analyzing is true
+   else:
+       path_input = options[9][1]
+       #compare_clients(path_in=path_input, path_out=path_output, options_in=options)
+       compare_clients(path_in=path_input, path_out=path_output, bool_main_info=options[3][0], bool_passwords=options[4][0],bool_usernames=options[5][0], bool_uniq_cmds=options[6][0], bool_check_if_robot=options[7][0],
+                       bool_downloaded_files=options[8][0],
+                       bool_filter_ip=options[10][0],filter_ip=options[10][1],
+                       bool_filter_ses=options[11][0], filter_ses=options[11][1],
+                       bool_filter_downloads=options[12][0], filter_downloads=options[12][1],
+                       thr_uniq_cmd=80, nr_common_pass=25,
+                       nr_common_users=25)
 
 
+##bool list of arguments status: 0: Output to file 1: convert 2: analyze all 3: main client info
+#4: common passwords 5: common usernames 6: uniq commands 7: Human sessions 8: Downloaded files 9: input file 10: filter-ip 11: filter-sessions 12: filter-downloads
+#See how many uniq set och commands a client have executed.
 
 start()
+
+
+
 
 #compare_clients(80)
 
