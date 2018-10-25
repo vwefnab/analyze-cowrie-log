@@ -45,8 +45,8 @@ def help_page():
     -u      Unique set of commands. (Default threshold is set to 80%)
         [-u]
     
-    -h      Human like set of commands (Non robot)
-        [-h]
+    -H      Human like set of commands (Non robot)
+        [-H]
     
     -d      SHASUM of all downloaded files.
         [-d]
@@ -146,7 +146,7 @@ def get_options(args=sys.argv):
             elif arg in '-u':
                 option_list[6][0] = 1
             # If human session is going to be true
-            elif arg in '-h':
+            elif arg in '-H':
                 option_list[7][0] = 1
             # If download option is going to be true
             elif arg in '-d':
@@ -169,8 +169,10 @@ def get_options(args=sys.argv):
 
                 try:
                     arg_value = arg[12:]
+
                     if len(arg_value) != 0:
-                        option_list[10][1] == arg_value
+                        option_list[10][1] = arg_value
+
                     else:
                         raise
 
@@ -524,6 +526,36 @@ def json_to_objects3(path_in, path_out):
 
 def fuse_duplicate_clients_to_file(file_paths):
 
+    ###EXPERIMENT#####----->
+    ip_alla = list()
+    ip_list = list()
+    for clients_file in file_paths:
+        ip_list.append(set())
+
+        file = open(clients_file, 'r')
+        for f in file:
+            f_json = json.loads(f)
+            ip_list[-1].add(f_json['ipaddress'])
+        for ip in ip_list[-1]:
+            ip_alla.append(ip)
+
+    ip_alla.sort()
+
+    ip_dublicates = set()
+    last_ip = ''
+    for ip in ip_alla:
+        if ip in last_ip:
+            ip_dublicates.add(ip)
+        last_ip = ip
+
+    for ip in ip_dublicates:
+        print(ip)
+
+
+
+    ####<-------EXPERIMENT
+
+
     for clients_file in file_paths:
         dub_list = list()
         # get all ip addresses of client_objects
@@ -747,10 +779,10 @@ def get_main_client_info(client, nr_sessions=0, ipaddress='', nr_downloads=0):
 
     if nr_ses >= nr_sessions and ipaddress in ip and nr_download >= nr_downloads:
         list_print.append(ip)
-        list_print.append('SESSIONS: '+ str(nr_ses))
-        list_print.append('DOWNLOADS: '+str(nr_download))
-        list_print.append('UNIQ_FILES: '+ str(nr_uniq_files))
-        list_print.append('UNIQ_PASSWD: '+ str(len(passwords)))
+        list_print.append(nr_ses)
+        list_print.append(nr_download)
+        list_print.append(nr_uniq_files)
+        list_print.append(passwords)
     return list_print
 
 
@@ -922,11 +954,16 @@ def compare_clients(path_in, path_out='',bool_main_info=0, bool_passwords=0, boo
         sys.stdout = open(path_out, 'w')
 
     if bool_main_info:
+        #Fuse all dublicates of output data
+        #all_main_info = fuse_main_info(all_main_info)
+        #Sort by sessions
         all_main_info.sort(key=sort_key_session, reverse=True)
+        #Make a nice string of the content in all_main_info
+        all_main_info = main_info_to_string_list(all_main_info)
         for client_info in all_main_info:
             info_string = ''
             for info in client_info:
-                info_string += info + '\t\t'
+                info_string += info + '\t'
             print(info_string)
 
 
@@ -964,10 +1001,83 @@ def compare_clients(path_in, path_out='',bool_main_info=0, bool_passwords=0, boo
         for sha in all_downloads:
             print(sha)
 
+def main_info_to_string_list(lista_main):
+
+    #Ad string before every value.
+    count = 0
+    while count < len(lista_main):
+        lista_main[count][1] = 'SESSIONS: '+str(lista_main[count][1])
+        lista_main[count][2] = 'DOWNLOADS: '+str(lista_main[count][2])
+        lista_main[count][3] = 'UNIQ_FILES: ' + str(lista_main[count][3])
+        lista_main[count][4] = 'UNIQ_PASSWD: ' + str(len(lista_main[count][4]))
+        count+=1
+
+    #Make all strings equal to 18 char long
+    count = 0
+    while count < len(lista_main):
+        if len(lista_main[count][0]) < 18:
+            diff = 18 - len(lista_main[count][0])
+            for _ in range(diff):
+                lista_main[count][0] += ' '
+        if len(lista_main[count][1]) < 18:
+            diff = 18 - len(lista_main[count][1])
+            for _ in range(diff):
+                lista_main[count][1] += ' '
+        if len(lista_main[count][2]) < 18:
+            diff = 18 - len(lista_main[count][2])
+            for _ in range(diff):
+                lista_main[count][2] += ' '
+        if len(lista_main[count][3]) < 18:
+            diff = 18 - len(lista_main[count][3])
+            for _ in range(diff):
+                lista_main[count][3] += ' '
+        if len(lista_main[count][4]) < 18:
+            diff = 18 - len(lista_main[count][4])
+            for _ in range(diff):
+                lista_main[count][4] += ' '
 
 
+        count+=1
+
+
+    return lista_main
+
+def fuse_main_info(list_main):
+    new_list = list()
+    #sort after ip address
+    list_main.sort(key=sort_key_ip)
+
+
+    #Fuse
+    last_ip = ''
+    count = -1
+    for data in list_main:
+        if data[0] in last_ip:
+
+            new_list[count][1] = new_list[count][1] + data[1]
+            new_list[count][2] = new_list[count][2] + data[2]
+            new_list[count][3] = new_list[count][3] + data[3]
+            new_list[count][4] = new_list[count][4] + data[4]
+        else:
+            new_list.append(data)
+            count += 1
+        last_ip = data[0]
+
+    return new_list
+
+
+''''list_print.append(ip)
+        list_print.append('SESSIONS: '+ str(nr_ses))
+        list_print.append('DOWNLOADS: '+str(nr_download))
+        list_print.append('UNIQ_FILES: '+ str(nr_uniq_files))
+        list_print.append('UNIQ_PASSWD: '+ str(len(passwords)))'''
+def sort_key_ip(element):
+    return element[0]
 
 def sort_key_session(element):
+    return element[1]
+
+def sort_key_session2(element):
     text_session = element[1]
     size = int(text_session[10:])
     return size
@@ -1074,33 +1184,21 @@ def start():
     #If analyzing is true
    else:
        path_input = options[9][1]
+
        #compare_clients(path_in=path_input, path_out=path_output, options_in=options)
-       compare_clients(path_in=path_input, path_out=path_output, bool_main_info=options[3][0], bool_passwords=options[4][0],bool_usernames=options[5][0], bool_uniq_cmds=options[6][0], bool_check_if_robot=options[7][0],
+       compare_clients(path_in=path_input, path_out=path_output, bool_main_info=options[3][0], bool_passwords=options[4][0],
+                       bool_usernames=options[5][0], bool_uniq_cmds=options[6][0], bool_check_if_robot=options[7][0],
                        bool_downloaded_files=options[8][0],
                        bool_filter_ip=options[10][0],filter_ip=options[10][1],
                        bool_filter_ses=options[11][0], filter_ses=options[11][1],
                        bool_filter_downloads=options[12][0], filter_downloads=options[12][1],
-                       thr_uniq_cmd=80, nr_common_pass=25,
-                       nr_common_users=25)
+                       thr_uniq_cmd=80, nr_common_pass=options[4][1], nr_common_users=options[5][1])
 
-
-##bool list of arguments status: 0: Output to file 1: convert 2: analyze all 3: main client info
-#4: common passwords 5: common usernames 6: uniq commands 7: Human sessions 8: Downloaded files 9: input file 10: filter-ip 11: filter-sessions 12: filter-downloads
-#See how many uniq set och commands a client have executed.
 
 start()
 
 
 
-
-#compare_clients(80)
-
-
-#json_to_objects3()
-#get_all_client_info(ipaddress='192.168.1.112')
-#alist =
-#dlist = ['cow_clients1','cow_clients2','cow_clients3','cow_clients4']
-#fuse_duplicate_clients_to_file(dlist)
 
 
 
