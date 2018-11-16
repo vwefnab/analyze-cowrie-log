@@ -15,9 +15,9 @@ Python 3
 
 * Get common passwords
 * Get common usernames
-* List all uniqe set of commands
+* List all unique set of commands
 * List all human like sessions
 * SHA sum of downloaded files
-* Main info about clients (Sessions, downloads, uniqe files, uniqe passwords)
+* Main info about clients (Sessions, downloads, unique files, unique passwords)
 
 
